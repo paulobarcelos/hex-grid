@@ -9,7 +9,7 @@
 				box-sizing: border-box;
 				overflow: scroll;
 				-webkit-overflow-scrolling: touch;
-				
+
 			}
 			#container ::content > .item{
 				position: absolute;
@@ -159,42 +159,54 @@
 				}
 
 				var transformOriginLeft = '50%';
+				var transformOriginTop = '50%';
 				if(percentL > 0){
 					transformOriginLeft = '100%';
+					transformOriginTop = '50%';
+					if(percentT > 0){
+						transformOriginLeft = '85%';
+						transformOriginTop = '75%';
+					}
+					else if(percentB > 0){
+						transformOriginLeft = '85%';
+						transformOriginTop = '25%';
+					}
 				}
 				else if(percentR > 0){
-					transformOriginLeft = '0%'
+					transformOriginLeft = '0%';
+					transformOriginTop = '50%';
+					if(percentT > 0){
+						transformOriginLeft = '15%';
+						transformOriginTop = '75%';
+					}
+					else if(percentB > 0){
+						transformOriginLeft = '15%';
+						transformOriginTop = '25%';
+					}
 				}
-
-				var transformOriginTop = '50%';
-				if(percentT > 0){
+				else if(percentT > 0){
+					transformOriginLeft = '50%';
 					transformOriginTop = '100%';
 				}
 				else if(percentB > 0){
+					transformOriginLeft = '50%';
 					transformOriginTop = '0%';
 				}
-				if(percentL > 0 && percentT > 0){
-					transformOriginLeft = '75%';
-				}
-				if(percentL > 0 && percentB > 0){
-					transformOriginLeft = '75%';
-				}
-				if(percentR > 0 && percentT > 0){
-					transformOriginLeft = '25%';
-				}
-				if(percentR > 0 && percentB > 0){
-					transformOriginLeft = '25%';
-				}
 
-				item.style.transformOrigin = transformOriginLeft + ' ' + transformOriginTop;
+
+
+
 
 				var scale = 1;
 				if(biggestPercent > 0 && biggestPercent < 1){
 					scale = 1 - biggestPercent;
 				}
+				var opacity = 1;
 				if(scale < this.minScale){
-					scale = this.minScale;
+					opacity = Math.pow(scale / this.minScale,3);
 				}
+				item.style.opacity = opacity;
+				item.style.transformOrigin = transformOriginLeft + ' ' + transformOriginTop;
 				this.transform('scale3d('+scale+','+scale+',1)', item);
 
 			}.bind(this));
