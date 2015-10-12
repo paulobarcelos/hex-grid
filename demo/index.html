@@ -1,0 +1,94 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<title>hex-grid Demo</title>
+		<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+		<link rel="import" href="../../iron-ajax/iron-ajax.html">
+		<link rel="import" href="../../paper-slider/paper-slider.html">
+		<link rel="import" href="../hex-grid.html">
+
+		<style>
+			body{
+				background-color: grey;
+			}
+			.item{
+				font-size: 1rem;
+				position: absolute;
+				padding-left: 2rem;
+			}
+			.item .inner{
+				background-color: white;
+			}
+			.gui{
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				background-color: rgba(255,255,255, 0.3);
+			}
+			hex-grid{
+				position: fixed;
+				top:0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+			}
+		</style>
+	</head>
+	<body unresolved>
+
+		<template is="dom-bind">
+			<iron-ajax url="../data.json" last-response="{{items}}" auto></iron-ajax>
+			<hex-grid
+				size="{{size}}"
+				fitting="{{fitting}}"
+				min-scale="{{minScale}}">
+
+				<template
+					is="dom-repeat"
+					items=[[items]]>
+					<div class="item">
+						<div class="inner"></div>
+					</div>
+				</template>
+			</hex-grid>
+
+			<div class="gui">
+				<div>Size</div>
+				<paper-slider
+					min="0"
+					max="10"
+					step="0.005"
+					pin
+					editable
+					value=4
+					immediate-value="{{size}}">
+				</paper-slider>
+				<div>Fitting</div>
+				<paper-slider
+					min="0"
+					max="1"
+					step="0.005"
+					pin
+					editable
+					value=0.98
+					immediate-value="{{fitting}}">
+				</paper-slider>
+				<div>Minimum Scale</div>
+				<paper-slider
+					min="0"
+					max="1"
+					step="0.005"
+					pin
+					editable
+					value=0
+					immediate-value="{{minScale}}">
+				</paper-slider>
+			</div>
+		</template>
+
+	</body>
+</html>
