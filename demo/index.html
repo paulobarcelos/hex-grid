@@ -9,6 +9,7 @@
 
 		<link rel="import" href="../../iron-ajax/iron-ajax.html">
 		<link rel="import" href="../../iron-collapse/iron-collapse.html">
+		<link rel="import" href="../../iron-image/iron-image.html">
 		<link rel="import" href="../../paper-slider/paper-slider.html">
 		<link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
 
@@ -40,6 +41,21 @@
 			}
 			.item .inner{
 				background-color: grey;
+				padding-left: 5rem;
+				position: relative;
+			}
+			.item .inner iron-image{
+				position: absolute;
+				top:0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+			.item .inner .debug{
+				position: absolute;
+				top:25%;
+				left: 25%;
+				background-color: rgba(255,255,255, 0.4);
 			}
 			.gui{
 				position: absolute;
@@ -56,15 +72,28 @@
 
 		<template is="dom-bind" id="template">
 			<hex-grid
-				size="{{size}}"
-				fitting="{{fitting}}"
-				min-scale="{{minScale}}">
+				size="[[size]]"
+				margin="[[margin]]"
+				fitting="[[fitting]]"
+				min-scale="[[minScale]]"
+				drop-Chance="[[dropChance]]"
+				revive-Chance="[[reviveChance]]"
+				drop-Interval="[[dropInterval]]">
 
 				<template
 					is="dom-repeat"
 					items=[[items]]>
 					<div class="item">
-						<div class="inner"></div>
+						<div class="outer">
+							<div class="inner">
+								<iron-image
+									src="[[item.thumbnail]]"
+									preload
+									sizing="cover">
+								</iron-image>
+								<div class="debug"></div>
+							</div>
+						</div>
 					</div>
 				</template>
 			</hex-grid>
@@ -75,10 +104,10 @@
 					<div>Number of items</div>
 					<paper-slider
 						min="0"
-						max="1000"
+						max="200"
 						step="1"
 						editable
-						value=0
+						value=9
 						on-change="_numberOfItemsChanged">
 					</paper-slider>
 					<div>Size</div>
@@ -87,8 +116,17 @@
 						max="10"
 						step="0.005"
 						editable
-						value=2
+						value=5
 						immediate-value="{{size}}">
+					</paper-slider>
+					<div>Margin</div>
+					<paper-slider
+						min="0"
+						max="10"
+						step="1"
+						editable
+						value=5
+						immediate-value="{{margin}}">
 					</paper-slider>
 					<div>Fitting</div>
 					<paper-slider
@@ -105,8 +143,35 @@
 						max="1"
 						step="0.005"
 						editable
-						value=0.5
+						value=0
 						immediate-value="{{minScale}}">
+					</paper-slider>
+					<div>Feed drop chance</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.04
+						immediate-value="{{dropChance}}">
+					</paper-slider>
+					<div>Feed revive chance</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.2
+						immediate-value="{{reviveChance}}">
+					</paper-slider>
+					<div>Feed drop interval</div>
+					<paper-slider
+						min="0"
+						max="5000"
+						step="1"
+						editable
+						value=500
+						immediate-value="{{dropInterval}}">
 					</paper-slider>
 				</iron-collapse>
 
@@ -122,11 +187,16 @@
 				var items = [];
 				for (var i = 0; i < amount; i++) {
 					items.push({
-
+						thumbnail: 'img/' +(i %17) + '.jpg'
 					})
 				}
-				template.items = items;
+				template.items = [];
+				setTimeout(function(){
+					template.items = items;
+				},50);
+
 			}
+			template._createItems(9);
 
 		</script>
 

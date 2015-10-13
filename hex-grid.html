@@ -14,8 +14,8 @@
 				position: absolute;
 				overflow: hidden;
 				box-sizing: border-box;
-
 			}
+			#container ::content > .item .outer,
 			#container ::content > .item .inner{
 				position: absolute;
 				overflow: hidden;
@@ -24,6 +24,8 @@
 				left: 0;
 				width: 100%;
 				height: 100%;
+			}
+			#container ::content > .item .inner{
 				-webkit-clip-path: polygon(
 					25% 0%,
 					75% 0%,
@@ -34,6 +36,18 @@
 					25% 0%
 				);
 			}
+			#container ::content > .item .outer{
+				transition: transform 0.4s ease-in-out,	 opacity 0.5s ease-out;
+				transform: scale(0.999,0.999,0);
+				opacity: 0.999;
+			}
+			#container ::content > .item.removed .outer{
+				opacity: 0;
+			}
+			#container ::content > .item.out .outer{
+				transform: scale3d(0,0,0);
+			}
+
 		</style>
 
 		<div id="container">
@@ -53,18 +67,27 @@
 			size: {
 				type: Number
 			},
+			margin:{
+				type: Number
+			},
 			fitting: {
 				type: Number
 			},
 			minScale: {
 				type: Number
 			},
-			flatTopped: {
-				type: Boolean,
-				value: false
+			dropChance: {
+				type: Number,
+			},
+			reviveChance: {
+				type: Number,
+			},
+			dropInterval: {
+				type: Number,
 			},
 			items:{
-				type: Array
+				type: Array,
+				value: []
 			}
 		},
 		attached: function(){
@@ -74,7 +97,7 @@
 			'scroll': '_onScroll'
 		},
 		observers:[
-			'_layout(size, fitting, minScale)'
+			'_layout(size, fitting, minScale, margin)'
 		],
 		ready: function(){
 			var observer = new MutationObserver(this._layout.bind(this));
@@ -85,7 +108,7 @@
 			});
 
 			this._rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-
+			this._render();
 		},
 		_layout: function(){
 			var boundingRect = this.getBoundingClientRect();
@@ -116,8 +139,8 @@
 
 					item.dataset.width = (width * this.fitting);
 					item.dataset.height = (height * this.fitting);
-					item.dataset.top = (y * verticalSpace + (x % 2) * height / 2);
-					item.dataset.left = (x * horizontalSpace);
+					item.dataset.top = this.margin + (y * verticalSpace + (x % 2) * height / 2);
+					item.dataset.left = this.margin + (x * horizontalSpace);
 
 					item.style.width = item.dataset.width + 'rem';
 					item.style.height = item.dataset.height + 'rem';
@@ -126,24 +149,48 @@
 
 				}
 			}
-			this.$.container.style.width = ((cols - 1) * horizontalSpace + (width * 1-(3/4) ) * this.fitting) + 'rem';
-			this.$.container.style.height = (verticalSpace * rows + verticalSpace / 2 - verticalSpace * (1-this.fitting))  + 'rem';
-			this._onScroll();
+			var containerHeight = ((cols - 1) * horizontalSpace + (width * 1-(3/4) ) * this.fitting)+ this.margin * 2;
+			var containerWidth = (verticalSpace * rows + verticalSpace / 2 - verticalSpace * (1-this.fitting)) +  this.margin * 2;
+			this.$.container.style.width = containerHeight + 'rem';
+			this.$.container.style.height = containerWidth + 'rem';
+			//this.translated3d( this.margin  + 'rem',  this.margin  + 'rem', 0, this.$.container);
+			//this.scrollTop = (containerHeight * this._rootFontSize - boundingRect.height) * 0.37;
+			//this.scrollLeft = (containerWidth * this._rootFontSize - boundingRect.width) * 0.37;
+			//this._onScroll();
+
+
+			var removeItems = function(){
+				this.items.forEach(function(item) {
+					if(Math.random() > 1 - this.dropChance){
+						item.classList.add('removed');
+					}
+				}.bind(this));
+				this.items.forEach(function(item) {
+					if(Math.random() > 1 - this.reviveChance){
+						item.classList.remove('removed');
+					}
+				}.bind(this));
+				this.debounce('removeItems', removeItems, this.dropInterval);
+			}.bind(this);
+			this.cancelDebouncer('removeItems');
+			this.debounce('removeItems', removeItems, this.dropInterval);
 		},
 		_onScroll: function(){
-			var scrollTop = this.scrollTop / this._rootFontSize;
-			var scrollLeft =  this.scrollLeft / this._rootFontSize;
+			this._normalizedScrollTop = this.scrollTop / this._rootFontSize;
+			this._normalizedScrollLeft =  this.scrollLeft / this._rootFontSize;
+		},
+		_render: function(){
 			this.items.forEach(function(item) {
-				var distL = scrollLeft - item.dataset.left;
+				var distL = this._normalizedScrollLeft  - item.dataset.left;
 				var percentL = distL / item.dataset.width;
 
-				var distT = scrollTop - item.dataset.top;
+				var distT = this._normalizedScrollTop - item.dataset.top;
 				var percentT = distT / item.dataset.height;
 
-				var distB = parseFloat(item.dataset.top) + parseFloat(item.dataset.height) - (scrollTop + this._windowHeight);
+				var distB = parseFloat(item.dataset.top) + parseFloat(item.dataset.height) - (this._normalizedScrollTop + this._windowHeight);
 				var percentB = distB / item.dataset.height;
 
-				var distR = parseFloat(item.dataset.left) + parseFloat(item.dataset.width) - (scrollLeft + this._windowWidth);
+				var distR = parseFloat(item.dataset.left) + parseFloat(item.dataset.width) - (this._normalizedScrollLeft  + this._windowWidth);
 				var percentR = distR / item.dataset.width;
 
 				var biggestPercent = percentL;
@@ -159,7 +206,8 @@
 
 				var transformOriginLeft = '50%';
 				var transformOriginTop = '50%';
-				if(percentL > 0){
+				var scaleAdjust
+				/*if(percentL > 0){
 					transformOriginLeft = '100%';
 					transformOriginTop = '50%';
 					if(percentT > 0){
@@ -190,9 +238,51 @@
 				else if(percentB > 0){
 					transformOriginLeft = '50%';
 					transformOriginTop = '0%';
+				}*/
+				if(percentL > 0){
+					transformOriginLeft = '100%';
+					transformOriginTop = '50%';
+
+				}
+				if(percentR > 0){
+					transformOriginLeft = '0%';
+					transformOriginTop = '50%';
+				}
+				if(percentT > 0){
+					transformOriginLeft = '50%';
+					transformOriginTop = '100%';
+
+				}
+				if(percentB > 0){
+					transformOriginLeft = '50%';
+					transformOriginTop = '0%';
 				}
 
+				/*if(percentL > 0 && percentT > 0){
+					transformOriginLeft = '0%';
+					transformOriginTop = '0%';
+				}
+				if(percentL > 0 && percentB > 0){
+					transformOriginLeft = '0%';
+					transformOriginTop = '100%';
+				}
+				if(percentR > 0 && percentT > 0){
+					transformOriginLeft = '100%';
+					transformOriginTop = '0%';
+				}
+				*/
+				if(	(percentR > 0 && percentB > 0) ||
+					(percentR > 0 && percentT > 0) ||
+					(percentL > 0 && percentT > 0) ||
+					(percentL > 0 && percentB > 0)){
+					item.classList.add('out');
+				}
+				else{
+					item.classList.remove('out');
+				}
 
+				var debug = item.querySelector('.debug');
+				//debug.innerHTML = percentT + ' ' +percentR + ' '+percentB + ' '+percentL ;
 
 
 
@@ -209,6 +299,9 @@
 				this.transform('scale3d('+scale+','+scale+',1)', item);
 
 			}.bind(this));
+
+			window.requestAnimationFrame(this._render.bind(this));
+
 		}
 
 	});
