@@ -8,12 +8,30 @@
 		<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
 		<link rel="import" href="../../iron-ajax/iron-ajax.html">
+		<link rel="import" href="../../iron-collapse/iron-collapse.html">
 		<link rel="import" href="../../paper-slider/paper-slider.html">
+		<link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
+
 		<link rel="import" href="../hex-grid.html">
 
 		<style>
 			body{
-				background-color: grey;
+				font-family: 'Roboto';
+				background-color: white;
+				position: absolute;
+				top:0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				margin: 0;
+				padding: 0;
+			}
+			hex-grid{
+				position: absolute;
+				top:30%;
+				left: 0;
+				right: 0;
+				bottom: 0;
 			}
 			.item{
 				font-size: 1rem;
@@ -21,27 +39,22 @@
 				padding-left: 2rem;
 			}
 			.item .inner{
-				background-color: white;
+				background-color: grey;
 			}
 			.gui{
 				position: absolute;
-				bottom: 0;
-				right: 0;
-				background-color: rgba(255,255,255, 0.3);
-			}
-			hex-grid{
-				position: fixed;
-				top:0;
+				top: 0;
 				left: 0;
-				right: 0;
-				bottom: 0;
+				padding: 1rem;
+				background-color: rgba(255,255,255, 0.6);
+				width: 200px;
 			}
+
 		</style>
 	</head>
 	<body unresolved>
 
-		<template is="dom-bind">
-			<iron-ajax url="../data.json" last-response="{{items}}" auto></iron-ajax>
+		<template is="dom-bind" id="template">
 			<hex-grid
 				size="{{size}}"
 				fitting="{{fitting}}"
@@ -57,38 +70,65 @@
 			</hex-grid>
 
 			<div class="gui">
-				<div>Size</div>
-				<paper-slider
-					min="0"
-					max="10"
-					step="0.005"
-					pin
-					editable
-					value=4
-					immediate-value="{{size}}">
-				</paper-slider>
-				<div>Fitting</div>
-				<paper-slider
-					min="0"
-					max="1"
-					step="0.005"
-					pin
-					editable
-					value=0.98
-					immediate-value="{{fitting}}">
-				</paper-slider>
-				<div>Minimum Scale</div>
-				<paper-slider
-					min="0"
-					max="1"
-					step="0.005"
-					pin
-					editable
-					value=0.5
-					immediate-value="{{minScale}}">
-				</paper-slider>
+				<paper-toggle-button checked="{{openGui}}">Settings</paper-toggle-button>
+				<iron-collapse opened="[[openGui]]">
+					<div>Number of items</div>
+					<paper-slider
+						min="0"
+						max="1000"
+						step="1"
+						editable
+						value=0
+						on-change="_numberOfItemsChanged">
+					</paper-slider>
+					<div>Size</div>
+					<paper-slider
+						min="0"
+						max="10"
+						step="0.005"
+						editable
+						value=2
+						immediate-value="{{size}}">
+					</paper-slider>
+					<div>Fitting</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.98
+						immediate-value="{{fitting}}">
+					</paper-slider>
+					<div>Minimum Scale</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.5
+						immediate-value="{{minScale}}">
+					</paper-slider>
+				</iron-collapse>
+
 			</div>
 		</template>
+		<script>
+			var template = document.querySelector('#template');
+			template.items = [];
+			template._numberOfItemsChanged = function (e) {
+				template._createItems(e.target.value)
+			}
+			template._createItems = function (amount) {
+				var items = [];
+				for (var i = 0; i < amount; i++) {
+					items.push({
+
+					})
+				}
+				template.items = items;
+			}
+
+		</script>
 
 	</body>
 </html>
