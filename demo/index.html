@@ -53,9 +53,33 @@
 			}
 			.item .inner .debug{
 				position: absolute;
-				top:25%;
+				bottom:0%;
 				left: 25%;
 				background-color: rgba(255,255,255, 0.4);
+			}
+			.item .inner .viewers{
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				left: 0;
+				top: 0;
+				color: rgba(255,255,255, 0.8 );;
+				font-family: 'Futura';
+				text-align: center;
+			}
+
+			.item .inner .viewers .number{
+				margin-top: 35%;
+				background-color: rgba(0,0,0, 0.2);
+				display: inline-block;
+				border-radius: 999px;
+				padding: 0.2rem 0.5rem;
+				font-size: 0.8rem;
+				font-weight: lighter;
+			}
+			.item .inner .viewers .number[data-viewers="connecting"]{
+
+				font-size: 0.7rem;
 			}
 			.gui{
 				position: absolute;
@@ -72,6 +96,7 @@
 
 		<template is="dom-bind" id="template">
 			<hex-grid
+				total-items="[[totalItems]]"
 				size="[[size]]"
 				margin="[[margin]]"
 				fitting="[[fitting]]"
@@ -91,6 +116,9 @@
 									preload
 									sizing="cover">
 								</iron-image>
+								<div class="viewers">
+									<div class="number" data-viewers$="[[item.viewers]]">[[item.viewers]]</div>
+								</div>
 								<div class="debug"></div>
 							</div>
 						</div>
@@ -116,7 +144,7 @@
 						max="10"
 						step="0.005"
 						editable
-						value=5
+						value=3.85
 						immediate-value="{{size}}">
 					</paper-slider>
 					<div>Margin</div>
@@ -170,7 +198,7 @@
 						max="5000"
 						step="1"
 						editable
-						value=500
+						value=1500
 						immediate-value="{{dropInterval}}">
 					</paper-slider>
 				</iron-collapse>
@@ -186,13 +214,24 @@
 			template._createItems = function (amount) {
 				var items = [];
 				for (var i = 0; i < amount; i++) {
+					var viewers = Math.ceil(Math.pow(Math.random(), 10) * 10000);
+					if(viewers > 1000){
+						viewers =(viewers / 1000).toFixed(1)+ 'K';
+					}
+					if(i == 8){
+						viewers = "connecting"
+					}
+
 					items.push({
-						thumbnail: 'img/' +(i %17) + '.jpg'
+						thumbnail: 'img/' +(i %17) + '.jpg',
+						viewers: viewers
 					})
 				}
 				template.items = [];
+				template.totalItems = 0;
 				setTimeout(function(){
 					template.items = items;
+					template.totalItems = amount;
 				},50);
 
 			}

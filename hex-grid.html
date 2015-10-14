@@ -25,6 +25,9 @@
 				width: 100%;
 				height: 100%;
 			}
+			#container ::content > .item .debug{
+				display: none;
+			}
 			#container ::content > .item .inner{
 				-webkit-clip-path: polygon(
 					25% 0%,
@@ -37,9 +40,15 @@
 				);
 			}
 			#container ::content > .item .outer{
-				transition: transform 0.4s ease-in-out,	 opacity 0.5s ease-out;
+				transition: transform 0.4s ease-in-out,	 opacity 3s ease-in-out;
 				transform: scale(0.999,0.999,0);
 				opacity: 0.999;
+			}
+			#container ::content > .item.immediate .outer{
+				transition: none;
+			}
+			#container ::content > .item.hidden{
+				display: none;
 			}
 			#container ::content > .item.removed .outer{
 				opacity: 0;
@@ -90,22 +99,18 @@
 				value: []
 			}
 		},
-		attached: function(){
-			this._layout();
-		},
+
 		listeners:{
 			'scroll': '_onScroll'
 		},
 		observers:[
 			'_layout(size, fitting, minScale, margin)'
 		],
+		attached: function(){
+			this._layout();
+			this.async(this._layout, 200);
+		},
 		ready: function(){
-			var observer = new MutationObserver(this._layout.bind(this));
-			observer.observe(this, {
-				childList: true,
-				subtree: true,
-				characterData: true
-			});
 
 			this._rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
 			this._render();
@@ -133,19 +138,19 @@
 					if(index >= this.items.length){
 						continue;
 					}
-					item.dataset.xIndex = x;
-					item.dataset.yIndex = y;
-					item.dataset.index = index;
+					item.__xIndex = x;
+					item.__yIndex = y;
+					item.__index = index;
 
-					item.dataset.width = (width * this.fitting);
-					item.dataset.height = (height * this.fitting);
-					item.dataset.top = this.margin + (y * verticalSpace + (x % 2) * height / 2);
-					item.dataset.left = this.margin + (x * horizontalSpace);
+					item.__width = (width * this.fitting);
+					item.__height = (height * this.fitting);
+					item.__top = this.margin + (y * verticalSpace + (x % 2) * height / 2);
+					item.__left = this.margin + (x * horizontalSpace);
 
-					item.style.width = item.dataset.width + 'rem';
-					item.style.height = item.dataset.height + 'rem';
-					item.style.top = item.dataset.top + 'rem';
-					item.style.left = item.dataset.left + 'rem';
+					item.style.width = item.__width + 'rem';
+					item.style.height = item.__height + 'rem';
+					item.style.top = item.__top + 'rem';
+					item.style.left = item.__left + 'rem';
 
 				}
 			}
@@ -162,12 +167,16 @@
 			var removeItems = function(){
 				this.items.forEach(function(item) {
 					if(Math.random() > 1 - this.dropChance){
+						item.classList.remove('immediate');
 						item.classList.add('removed');
 					}
 				}.bind(this));
 				this.items.forEach(function(item) {
 					if(Math.random() > 1 - this.reviveChance){
+
+						item.classList.add('immediate');
 						item.classList.remove('removed');
+						//item.classList.remove('immediate');
 					}
 				}.bind(this));
 				this.debounce('removeItems', removeItems, this.dropInterval);
@@ -181,17 +190,23 @@
 		},
 		_render: function(){
 			this.items.forEach(function(item) {
-				var distL = this._normalizedScrollLeft  - item.dataset.left;
-				var percentL = distL / item.dataset.width;
+				var distL = this._normalizedScrollLeft  - item.__left;
+				var percentL = distL / item.__width;
 
-				var distT = this._normalizedScrollTop - item.dataset.top;
-				var percentT = distT / item.dataset.height;
+				var distT = this._normalizedScrollTop - item.__top;
+				var percentT = distT / item.__height;
 
-				var distB = parseFloat(item.dataset.top) + parseFloat(item.dataset.height) - (this._normalizedScrollTop + this._windowHeight);
-				var percentB = distB / item.dataset.height;
+				var distB = parseFloat(item.__top) + parseFloat(item.__height) - (this._normalizedScrollTop + this._windowHeight);
+				var percentB = distB / item.__height;
 
-				var distR = parseFloat(item.dataset.left) + parseFloat(item.dataset.width) - (this._normalizedScrollLeft  + this._windowWidth);
-				var percentR = distR / item.dataset.width;
+				var distR = parseFloat(item.__left) + parseFloat(item.__width) - (this._normalizedScrollLeft  + this._windowWidth);
+				var percentR = distR / item.__width;
+
+				if(percentT > 1 || percentR > 1 || percentB > 1 || percentL > 1){
+					item.classList.add('hidden');
+					return;
+				}
+				item.classList.remove('hidden');
 
 				var biggestPercent = percentL;
 				if(percentR > biggestPercent){
@@ -204,96 +219,123 @@
 					biggestPercent = percentT;
 				}
 
-				var transformOriginLeft = '50%';
-				var transformOriginTop = '50%';
-				var scaleAdjust
-				/*if(percentL > 0){
-					transformOriginLeft = '100%';
-					transformOriginTop = '50%';
-					if(percentT > 0){
-						transformOriginLeft = '85%';
-						transformOriginTop = '75%';
-					}
-					else if(percentB > 0){
-						transformOriginLeft = '85%';
-						transformOriginTop = '25%';
-					}
-				}
-				else if(percentR > 0){
-					transformOriginLeft = '0%';
-					transformOriginTop = '50%';
-					if(percentT > 0){
-						transformOriginLeft = '15%';
-						transformOriginTop = '75%';
-					}
-					else if(percentB > 0){
-						transformOriginLeft = '15%';
-						transformOriginTop = '25%';
-					}
-				}
-				else if(percentT > 0){
-					transformOriginLeft = '50%';
-					transformOriginTop = '100%';
-				}
-				else if(percentB > 0){
-					transformOriginLeft = '50%';
-					transformOriginTop = '0%';
-				}*/
-				if(percentL > 0){
-					transformOriginLeft = '100%';
-					transformOriginTop = '50%';
-
-				}
-				if(percentR > 0){
-					transformOriginLeft = '0%';
-					transformOriginTop = '50%';
-				}
-				if(percentT > 0){
-					transformOriginLeft = '50%';
-					transformOriginTop = '100%';
-
-				}
-				if(percentB > 0){
-					transformOriginLeft = '50%';
-					transformOriginTop = '0%';
-				}
-
-				/*if(percentL > 0 && percentT > 0){
-					transformOriginLeft = '0%';
-					transformOriginTop = '0%';
-				}
-				if(percentL > 0 && percentB > 0){
-					transformOriginLeft = '0%';
-					transformOriginTop = '100%';
-				}
-				if(percentR > 0 && percentT > 0){
-					transformOriginLeft = '100%';
-					transformOriginTop = '0%';
-				}
-				*/
-				if(	(percentR > 0 && percentB > 0) ||
-					(percentR > 0 && percentT > 0) ||
-					(percentL > 0 && percentT > 0) ||
-					(percentL > 0 && percentB > 0)){
-					item.classList.add('out');
-				}
-				else{
-					item.classList.remove('out');
-				}
-
-				var debug = item.querySelector('.debug');
-				//debug.innerHTML = percentT + ' ' +percentR + ' '+percentB + ' '+percentL ;
-
-
-
 				var scale = 1;
 				if(biggestPercent > 0 && biggestPercent < 1){
 					scale = 1 - biggestPercent;
 				}
+
+				if(percentT < 0 &&  percentR < 0 &&  percentB < 0 &&  percentL < 0){
+					item.__exitEdge = 'center';
+				}
+				else if(percentT > 0 &&  percentR < 0 &&  percentB < 0 &&  percentL < 0){
+					item.__exitEdge = 'top';
+				}
+				else if(percentR > 0 &&  percentT < 0 &&  percentB < 0 &&  percentL < 0){
+					item.__exitEdge = 'right';
+				}
+				else if(percentB > 0 &&  percentT < 0 &&  percentR < 0 &&  percentL < 0){
+					item.__exitEdge = 'bottom';
+				}
+				else if(percentL > 0 &&  percentT < 0 &&  percentR < 0 &&  percentB < 0){
+					item.__exitEdge = 'left';
+				}
+				item.__verticalEdge = '';
+				if(percentT > 0){
+					item.__verticalEdge = 'top';
+				}
+				else if(percentB > 0){
+					item.__verticalEdge = 'bottom';
+				}
+				item.__horizontalEdge = '';
+				if(percentL > 0){
+					item.__horizontalEdge = 'left';
+				}
+				else if(percentR > 0){
+					item.__horizontalEdge = 'right';
+				}
+
+				var debug = item.querySelector('.debug');
+				debug.innerHTML = '';
+				var transformOriginLeft;
+				var transformOriginTop;
+
+				var doAdjust;
+				var exitPercent;
+				var refPercent;
+				switch (item.__exitEdge) {
+					case 'top':
+						transformOriginLeft = '50%';
+						transformOriginTop = '100%';
+						doAdjust = item.__horizontalEdge;
+						exitPercent = percentT;
+						if(item.__horizontalEdge == 'left'){
+							refPercent = percentL;
+						}
+						else if(item.__horizontalEdge == 'right'){
+							refPercent = percentR;
+						}
+						break;
+					case 'right':
+						transformOriginLeft = '0%';
+						transformOriginTop = '50%';
+						doAdjust = item.__verticalEdge;
+						exitPercent = percentR;
+						if(item.__verticalEdge == 'top'){
+							refPercent = percentT;
+						}
+						else if(item.__verticalEdge == 'bottom'){
+							refPercent = percentB;
+						}
+						break;
+					case 'bottom':
+						transformOriginLeft = '50%';
+						transformOriginTop = '0%';
+						doAdjust = item.__horizontalEdge;
+						exitPercent = percentB;
+						if(item.__horizontalEdge == 'left'){
+							refPercent = percentL;
+						}
+						else if(item.__horizontalEdge == 'right'){
+							refPercent = percentR;
+						}
+						break;
+					case 'left':
+						transformOriginLeft = '100%';
+						transformOriginTop = '50%';
+						doAdjust = item.__verticalEdge;
+						exitPercent = percentL;
+						if(item.__verticalEdge == 'top'){
+							refPercent = percentT;
+						}
+						else if(item.__verticalEdge == 'bottom'){
+							refPercent = percentB;
+						}
+						break;
+
+				}
+				if(doAdjust){
+					var refPercent;
+					var adjust = refPercent / exitPercent;
+					if(adjust > 0.5){
+						if(refPercent < 0.5){
+							scale *= 1-(refPercent * 2) * (refPercent * 2) ;
+						}
+						else if(refPercent >= 0.5){
+							scale = 0;
+						}
+					}
+				}
+				debug.innerHTML = '1'
+
 				var opacity = 1;
 				if(scale < this.minScale){
 					opacity = Math.pow(scale / this.minScale,3);
 				}
+
+
+
+
+
 				item.style.opacity = opacity;
 				item.style.transformOrigin = transformOriginLeft + ' ' + transformOriginTop;
 				this.transform('scale3d('+scale+','+scale+',1)', item);
