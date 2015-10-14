@@ -1,0 +1,243 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<title>hex-grid Demo</title>
+		<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+		<link rel="import" href="../../iron-ajax/iron-ajax.html">
+		<link rel="import" href="../../iron-collapse/iron-collapse.html">
+		<link rel="import" href="../../iron-image/iron-image.html">
+		<link rel="import" href="../../paper-slider/paper-slider.html">
+		<link rel="import" href="../../paper-toggle-button/paper-toggle-button.html">
+
+		<link rel="import" href="../hex-grid.html">
+
+		<style>
+			body{
+				font-family: 'Roboto';
+				background-color: white;
+				position: absolute;
+				top:0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				margin: 0;
+				padding: 0;
+			}
+			hex-grid{
+				position: absolute;
+				top:30%;
+				left: 0;
+				right: 0;
+				bottom: 0;
+			}
+			.item{
+				font-size: 1rem;
+				position: absolute;
+				padding-left: 2rem;
+			}
+			.item .inner{
+				background-color: grey;
+				padding-left: 5rem;
+				position: relative;
+			}
+			.item .inner iron-image{
+				position: absolute;
+				top:0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+			.item .inner .debug{
+				position: absolute;
+				bottom:0%;
+				left: 25%;
+				background-color: rgba(255,255,255, 0.4);
+			}
+			.item .inner .viewers{
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				left: 0;
+				top: 0;
+				color: rgba(255,255,255, 0.8 );;
+				font-family: 'Futura';
+				text-align: center;
+			}
+
+			.item .inner .viewers .number{
+				margin-top: 35%;
+				background-color: rgba(0,0,0, 0.2);
+				display: inline-block;
+				border-radius: 999px;
+				padding: 0.2rem 0.5rem;
+				font-size: 0.8rem;
+				font-weight: lighter;
+			}
+			.item .inner .viewers .number[data-viewers="connecting"]{
+
+				font-size: 0.7rem;
+			}
+			.gui{
+				position: absolute;
+				top: 0;
+				left: 0;
+				padding: 1rem;
+				background-color: rgba(255,255,255, 0.6);
+				width: 200px;
+			}
+
+		</style>
+	</head>
+	<body unresolved>
+
+		<template is="dom-bind" id="template">
+			<hex-grid
+				total-items="[[totalItems]]"
+				size="[[size]]"
+				margin="[[margin]]"
+				fitting="[[fitting]]"
+				min-scale="[[minScale]]"
+				drop-Chance="[[dropChance]]"
+				revive-Chance="[[reviveChance]]"
+				drop-Interval="[[dropInterval]]">
+
+				<template
+					is="dom-repeat"
+					items=[[items]]>
+					<div class="item">
+						<div class="outer">
+							<div class="inner">
+								<iron-image
+									src="[[item.thumbnail]]"
+									preload
+									sizing="cover">
+								</iron-image>
+								<div class="viewers">
+									<div class="number" data-viewers$="[[item.viewers]]">[[item.viewers]]</div>
+								</div>
+								<div class="debug"></div>
+							</div>
+						</div>
+					</div>
+				</template>
+			</hex-grid>
+
+			<div class="gui">
+				<paper-toggle-button checked="{{openGui}}">Settings</paper-toggle-button>
+				<iron-collapse opened="[[openGui]]">
+					<div>Number of items</div>
+					<paper-slider
+						min="0"
+						max="200"
+						step="1"
+						editable
+						value=9
+						on-change="_numberOfItemsChanged">
+					</paper-slider>
+					<div>Size</div>
+					<paper-slider
+						min="0"
+						max="10"
+						step="0.005"
+						editable
+						value=3.85
+						immediate-value="{{size}}">
+					</paper-slider>
+					<div>Margin</div>
+					<paper-slider
+						min="0"
+						max="10"
+						step="1"
+						editable
+						value=5
+						immediate-value="{{margin}}">
+					</paper-slider>
+					<div>Fitting</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.98
+						immediate-value="{{fitting}}">
+					</paper-slider>
+					<div>Minimum Scale</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0
+						immediate-value="{{minScale}}">
+					</paper-slider>
+					<div>Feed drop chance</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.04
+						immediate-value="{{dropChance}}">
+					</paper-slider>
+					<div>Feed revive chance</div>
+					<paper-slider
+						min="0"
+						max="1"
+						step="0.005"
+						editable
+						value=0.2
+						immediate-value="{{reviveChance}}">
+					</paper-slider>
+					<div>Feed drop interval</div>
+					<paper-slider
+						min="0"
+						max="5000"
+						step="1"
+						editable
+						value=1500
+						immediate-value="{{dropInterval}}">
+					</paper-slider>
+				</iron-collapse>
+
+			</div>
+		</template>
+		<script>
+			var template = document.querySelector('#template');
+			template.items = [];
+			template._numberOfItemsChanged = function (e) {
+				template._createItems(e.target.value)
+			}
+			template._createItems = function (amount) {
+				var items = [];
+				for (var i = 0; i < amount; i++) {
+					var viewers = Math.ceil(Math.pow(Math.random(), 10) * 10000);
+					if(viewers > 1000){
+						viewers =(viewers / 1000).toFixed(1)+ 'K';
+					}
+					if(i == 8){
+						viewers = "connecting"
+					}
+
+					items.push({
+						thumbnail: 'img/' +(i %17) + '.jpg',
+						viewers: viewers
+					})
+				}
+				template.items = [];
+				template.totalItems = 0;
+				setTimeout(function(){
+					template.items = items;
+					template.totalItems = amount;
+				},50);
+
+			}
+			template._createItems(9);
+
+		</script>
+
+	</body>
+</html>
